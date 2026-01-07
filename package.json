@@ -1,0 +1,12 @@
+{
+  "name": "todo-app",
+  "version": "1.0.0",
+  "description": "シンプルなTODOアプリ",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["todo", "learning"],
+  "author": "コウモリ",
+  "license": "MIT"
+}
