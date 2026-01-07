@@ -1,5 +1,5 @@
 /**
- * TODOアプリ - フロントエンドJavaScript
+ * TODOアプリ - フロントエンドJavaScript（ローカルストレージ版）
  */
 
 // DOM要素の取得
@@ -14,8 +14,8 @@ const filterBtns = document.querySelectorAll('.filter-btn');
 let todos = [];
 let currentFilter = 'all';
 
-// APIベースURL
-const API_URL = '/api/todos';
+// ローカルストレージのキー
+const STORAGE_KEY = 'todos';
 
 // 初期化
 document.addEventListener('DOMContentLoaded', () => {
@@ -42,75 +42,58 @@ function setupEventListeners() {
     clearCompletedBtn.addEventListener('click', clearCompleted);
 }
 
-// TODOを読み込む
-async function loadTodos() {
-    try {
-        const response = await fetch(API_URL);
-        todos = await response.json();
-        renderTodos();
-    } catch (error) {
-        console.error('読み込みエラー:', error);
-    }
+// TODOを読み込む（ローカルストレージから）
+function loadTodos() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    todos = stored ? JSON.parse(stored) : [];
+    renderTodos();
+}
+
+// TODOを保存（ローカルストレージへ）
+function saveTodos() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
 }
 
 // 新しいTODOを追加
-async function handleSubmit(e) {
+function handleSubmit(e) {
     e.preventDefault();
     const text = todoInput.value.trim();
     if (!text) return;
 
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text })
-        });
-        const newTodo = await response.json();
-        todos.push(newTodo);
-        todoInput.value = '';
-        renderTodos();
-    } catch (error) {
-        console.error('追加エラー:', error);
-    }
+    const newTodo = {
+        id: Date.now(),
+        text: text,
+        completed: false,
+        createdAt: new Date().toISOString()
+    };
+    todos.push(newTodo);
+    saveTodos();
+    todoInput.value = '';
+    renderTodos();
 }
 
 // TODOの完了状態を切り替え
-async function toggleTodo(id) {
+function toggleTodo(id) {
     const todo = todos.find(t => t.id === id);
     if (!todo) return;
 
-    try {
-        const response = await fetch(`${API_URL}/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ completed: !todo.completed })
-        });
-        const updatedTodo = await response.json();
-        const index = todos.findIndex(t => t.id === id);
-        todos[index] = updatedTodo;
-        renderTodos();
-    } catch (error) {
-        console.error('更新エラー:', error);
-    }
+    todo.completed = !todo.completed;
+    saveTodos();
+    renderTodos();
 }
 
 // TODOを削除
-async function deleteTodo(id) {
-    try {
-        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-        todos = todos.filter(t => t.id !== id);
-        renderTodos();
-    } catch (error) {
-        console.error('削除エラー:', error);
-    }
+function deleteTodo(id) {
+    todos = todos.filter(t => t.id !== id);
+    saveTodos();
+    renderTodos();
 }
 
 // 完了済みを一括削除
-async function clearCompleted() {
-    const completedTodos = todos.filter(t => t.completed);
-    for (const todo of completedTodos) {
-        await deleteTodo(todo.id);
-    }
+function clearCompleted() {
+    todos = todos.filter(t => !t.completed);
+    saveTodos();
+    renderTodos();
 }
 
 // TODOリストを描画
